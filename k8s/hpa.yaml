@@ -1,0 +1,31 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: stock-prices-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: stock-prices-app
+  minReplicas: 2  # Minimum number of replicas
+  maxReplicas: 10 # Maximum number of replicas
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 30  # Trigger scaling when CPU usage reaches 30%
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60  # Wait 1 minute before scaling up again
+      policies:
+      - type: Percent
+        value: 100  # Double the number of replicas at most
+        periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300  # Wait 5 minutes before scaling down
+      policies:
+      - type: Percent
+        value: 20  # Scale down by at most 20% of current replicas
+        periodSeconds: 60
