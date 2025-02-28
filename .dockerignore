@@ -1,0 +1,40 @@
+# Git files
+.git
+.gitignore
+
+# Node.js dependencies and logs
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Environment variables
+.env
+.env.*
+
+# Documentation
+README.md
+CHANGELOG.md
+LICENSE
+docs/
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Kubernetes configuration
+k8s/
+
+# Docker files
+docker-compose*.yml
+
+# Build outputs
+/build
+/dist
+
+# Other unnecessary files
+*.log
+logs/

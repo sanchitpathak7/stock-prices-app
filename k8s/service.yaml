@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: stock-prices-service
+  annotations:
+    # DigitalOcean Load Balancer specific annotations
+    service.beta.kubernetes.io/do-loadbalancer-name: "stock-prices-lb"
+    service.beta.kubernetes.io/do-loadbalancer-protocol: "http"
+    service.beta.kubernetes.io/do-loadbalancer-algorithm: "round_robin"
+    service.beta.kubernetes.io/do-loadbalancer-size-slug: "lb-small"  # Smallest LB size for cost efficiency
+    service.beta.kubernetes.io/do-loadbalancer-healthcheck-path: "/health"
+    service.beta.kubernetes.io/do-loadbalancer-healthcheck-port: "3000"
+    service.beta.kubernetes.io/do-loadbalancer-healthcheck-protocol: "http"
+    service.beta.kubernetes.io/do-loadbalancer-healthcheck-check-interval-seconds: "10"
+    service.beta.kubernetes.io/do-loadbalancer-healthcheck-response-timeout-seconds: "5"
+    service.beta.kubernetes.io/do-loadbalancer-healthcheck-unhealthy-threshold: "3"
+    service.beta.kubernetes.io/do-loadbalancer-healthcheck-healthy-threshold: "2"
+    # Enable sticky sessions if needed (comment out if not needed)
+    # service.beta.kubernetes.io/do-loadbalancer-enable-proxy-protocol: "true"
+    # service.beta.kubernetes.io/do-loadbalancer-sticky-sessions-type: "cookies"
+    # service.beta.kubernetes.io/do-loadbalancer-sticky-sessions-cookie-name: "DO-LB-COOKIE"
+    # service.beta.kubernetes.io/do-loadbalancer-sticky-sessions-cookie-ttl: "3600"
+spec:
+  selector:
+    app: stock-prices-app
+  ports:
+  - port: 80
+    targetPort: 3000
+    name: http
+  type: LoadBalancer
