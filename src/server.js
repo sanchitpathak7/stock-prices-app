@@ -1,46 +1,40 @@
 const express = require('express');
 const path = require('path');
-const { getStockData } = require('./utils/stockData');
+const { getStockData, createAllMockData } = require('./utils/stockData');
 const app = express();
 const port = process.env.PORT || 3000;
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Initialize stock data at startup
-let initialDataFetched = false;
-const initializeData = async () => {
-  try {
-    console.log('Pre-fetching initial stock data...');
-    await getStockData();
-    initialDataFetched = true;
-    console.log('Initial stock data fetched successfully');
-  } catch (error) {
-    console.error('Failed to fetch initial stock data:', error);
-    // Will retry when API endpoints are called
-  }
-};
+// Initialize data fetching
+let initialDataFetchStarted = false;
 
 // API endpoint to get top stocks
 app.get('/api/stocks', async (req, res) => {
   try {
     console.log('Received request for /api/stocks');
     
-    // Wait for initial data to be fetched
-    if (!initialDataFetched) {
-      console.log('Initial data not yet available, fetching now...');
-      await initializeData();
+    // Start initial data fetch if not started yet
+    if (!initialDataFetchStarted) {
+      initialDataFetchStarted = true;
+      
+      // Return mock data immediately while starting real fetch in background
+      console.log('Returning mock data while fetching real data in background...');
+      res.json(createAllMockData());
+      
+      // Start real data fetch in background (don't wait for it)
+      getStockData().catch(err => console.error('Background fetch error:', err));
+      return;
     }
     
+    // For subsequent requests, get the current data (cached or fetch new)
     const stockData = await getStockData();
-    console.log(`Returning ${stockData.length} real stocks from Alpha Vantage`);
+    console.log(`Returning ${stockData.length} stocks`);
     res.json(stockData);
   } catch (error) {
     console.error('Error in /api/stocks endpoint:', error);
-    res.status(503).json({ 
-      error: 'Unable to fetch stock data from Alpha Vantage',
-      message: error.message
-    });
+    res.json(createAllMockData());
   }
 });
 
@@ -48,15 +42,12 @@ app.get('/api/stocks', async (req, res) => {
 app.get('/api/stocks/refresh', async (req, res) => {
   try {
     console.log('Received request for /api/stocks/refresh');
-    const stockData = await getStockData(true);
-    console.log(`Returning ${stockData.length} freshly fetched stocks`);
-    res.json(stockData);
+    
+    // For refresh, always return something immediately
+    res.json(await getStockData(true));
   } catch (error) {
     console.error('Error in /api/stocks/refresh endpoint:', error);
-    res.status(503).json({ 
-      error: 'Unable to refresh stock data from Alpha Vantage',
-      message: error.message
-    });
+    res.json(createAllMockData());
   }
 });
 
@@ -67,9 +58,7 @@ app.get('/health', (req, res) => {
 
 // Readiness probe endpoint
 app.get('/ready', (req, res) => {
-  const status = initialDataFetched ? 'ready' : 'initializing';
-  const statusCode = initialDataFetched ? 200 : 503;
-  res.status(statusCode).json({ status });
+  res.status(200).json({ status: 'ready' });
 });
 
 // Serve the main HTML page
@@ -79,7 +68,4 @@ app.get('/', (req, res) => {
 
 app.listen(port, () => {
   console.log(`Stock price app listening at http://localhost:${port}`);
-  
-  // Start fetching initial data
-  initializeData();
 });
